@@ -129,7 +129,7 @@ private[bootstrap] class HttpContactPointBootstrap(
     else
       strictEntity.flatMap { entity =>
         val body = entity.data.utf8String
-        Future.failed(new IllegalStateException(s"Expected 200 OK response but got ${response.status}. Body: '$body'"))
+        Future.failed(new IllegalStateException(s"Expected response '200 OK' but found ${response.status}. Body: '$body'"))
       }
   }
 
