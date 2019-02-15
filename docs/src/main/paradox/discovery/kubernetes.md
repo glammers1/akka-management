@@ -19,26 +19,44 @@ Using `akka-discovery-kubernetes-api` is very simple, as you simply need to depe
 
 And configure it to be used as default discovery implementation in your `application.conf`:
 
+* Set `akka.management.cluster.bootstrap.contact-point-discovery.discovery-method` to `kubernetes-api`
+* For bootstrap it is recommended to set the service discovery method via `akka.management.cluster.bootstrap.contact-point-discovery.discovery-method` rather then overriding the global service discovery mechanism with `akka.discovery.method`
+
 ```
-akka.discovery {
-  method = kubernetes-api
+akka.management {
+  cluster.bootstrap {
+    contact-point-discovery {
+      discovery-method = kubernetes-api
+    }
+  }
 }
 ```
 
 To find other pods, this method needs to know how they are labeled, what the name of the Akka Management port is, and
-what namespace they reside in. Below, you'll find the default configuration. It can be customized by changing these
-values in your `application.conf`.
+what namespace they reside in. The lookup needs to know which namespace to look in. By default, this will be detected by reading the namespace from the service account secret, in `/var/run/secrets/kubernetes.io/serviceaccount/namespace`, but can be overridden by setting `akka.discovery.kubernetes-api.pod-namespace`.
+
+Below, you'll find the default configuration. It can be customized by changing these values in your `application.conf`.
 
 ```
 akka.discovery {
   kubernetes-api {
-    pod-namespace = "default"
+    # Namespace discovery path
+    #
+    # If this path doesn't exist, the namespace will default to "default".
+    pod-namespace-path = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+  
+    # Namespace to query for pods.
+    #
+    # Set this value to a specific string to override discovering the namespace using pod-namespace-path.
+    pod-namespace = "<pod-namespace>"
 
-    # %s will be replaced with the configured effective name, which defaults to
-    # the actor system name
+    # Selector value to query pod API with.
+    # `%s` will be replaced with the configured effective name, which defaults to the actor system name
     pod-label-selector = "app=%s"
 
-    pod-port-name = "akka-mgmt-http"
+    # Only used in the case that Lookup.portName is not set. Bootstrap sets this from
+    # akka.management.cluster.bootstrap.contact-point-discovery.port-name
+    pod-port-name = "management"
   }
 }
 ```
